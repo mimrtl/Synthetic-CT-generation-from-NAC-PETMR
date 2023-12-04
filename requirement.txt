@@ -1,0 +1,9 @@
+This project is implemented using Keras. The conda environment requirement is listed as follows.
+
+1. conda create -n tf2 python=3.7
+2. conda install -c anaconda keras-gpu=2.3.1
+3. conda install -c anaconda tensorflow-gpu=1.14.0
+4. conda install -c conda-forge nibabel
+5. conda install -c conda-forge matplotlib=3.4.3
+6. conda install -c anaconda scikit-learn
+7. conda install -c anaconda scikit-image
