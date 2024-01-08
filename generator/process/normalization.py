@@ -7,14 +7,14 @@ import nibabel as nib
 
 
 def MaxMinNorm(data, type='MR'):
-    if type == 'MR':
-        data_max = np.amax(data)
-        data_min = np.amin(data)
-    else:
+    if type == 'CT':
         data_max = 2000.0
         data_min = -1000.0
         data[data > data_max] = data_max
         data[data < data_min] = data_min
+    else:
+        data_max = np.amax(data)
+        data_min = np.amin(data)
     print("Before:", data_max, data_min)
     data -= data_min
     data /= (data_max-data_min)
@@ -24,6 +24,15 @@ def MaxMinNorm(data, type='MR'):
 
 def NacNorm(data):
     return data/1500
+
+
+# percent normalization method
+def percentNormalization(data):
+    maximum = np.max(data)
+    edge = np.percentile(data[data > 0], 95)
+    data[data < edge] = (data[data < edge] * 0.95) / edge
+    data[data >= edge] = 0.95 + 0.05 * (data[data >= edge] - edge) / (maximum - edge)
+    return data
 
 
 # norm sCT

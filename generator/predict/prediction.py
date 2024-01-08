@@ -178,7 +178,6 @@ def predict_sCT(model, test_path, tag=''):
 
 
 if __name__ == '__main__':
-    # model_path = '/breast_project/training/transfer/result/gp_1/64-64-32/unet/upload_model/mse_model_xue_local_computer.hdf5'
     model_path = '/breast_project/training/result/gp_1/64-64-32/unet/per/1st_round/model_best.hdf5'
     sub_path = '/breast_project/training/transfer/result/gp_1/64-64-32/unet/upload_model/subj004/'
     model = load_model(model_path, compile=False)

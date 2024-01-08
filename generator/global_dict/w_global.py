@@ -7,6 +7,8 @@ global gbl_dict
 gbl_dict = {}
 
 
+# setup global dictionary for easy use
+
 def gbl_set_value(key, value) -> object:
     """
 

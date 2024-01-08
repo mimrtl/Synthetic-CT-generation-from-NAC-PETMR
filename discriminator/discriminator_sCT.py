@@ -3,8 +3,8 @@
 import os
 import datetime
 import argparse
-from global_dict.w_global import gbl_set_value, gbl_get_value, gbl_save_value
-from model.w_train import train_a_unet
+from global_dict.w_global import gbl_set_value
+from model_sCT.w_train import train_a_vgg
 
 
 def usage():
@@ -13,12 +13,12 @@ def usage():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='''This is for sCT generation from NAC PET data. ''',
+        description='''This is for discriminating sCT images and CT images for perceptual loss calculation (2nd round). ''',
         epilog="""All's well that ends well.""")
     parser.add_argument('--slice_x', metavar='', type=int, default=1,
                         help='Slices of input(1)<int>[1/3]')
     parser.add_argument('--color_mode', metavar='', type=int, default=1,
-                        help='Slices of input(1)<int>[1/3]')
+                        help='Greyscale(1) or RGB(3)<int>[1/3]')
 
     parser.add_argument('--size_x', metavar='', type=int, default=64,
                         help='chunk size: x dimension')
@@ -30,42 +30,31 @@ def main():
     parser.add_argument('--stride_x', metavar='', type=int, default=8,
                         help='stride of the x dimension')
     parser.add_argument('--stride_y', metavar='', type=int, default=8,
-                        help='stride of the x dimension')
+                        help='stride of the y dimension')
     parser.add_argument('--stride_z', metavar='', type=int, default=8,
-                        help='stride of the x dimension')
+                        help='stride of the z dimension')
 
-    parser.add_argument('--id', metavar='', type=str, default="chansey",
+    parser.add_argument('--id', metavar='', type=str, default="discriminator",
                         help='ID of the current model.(eeVee)<str>')
     parser.add_argument('--epoch', metavar='', type=int, default=500,
                         help='Number of epoches of training(300)<int>')
-    parser.add_argument('--n_filter', metavar='', type=int, default=32,
-                        help='The initial filter number(64)<int>')
-    parser.add_argument('--depth', metavar='', type=int, default=4,
-                        help='The depth of U-Net(4)<int>')
-    parser.add_argument('--batch_size', metavar='', type=int, default=8,
-                        help='The batch_size of training(10)<int>')
-    parser.add_argument('--content_weight', metavar='', type=int, default=2500e9,
-                        help='The content weight of perceptual loss<int>')
-    parser.add_argument('--style_weight', metavar='', type=int, default=11000e9,
-                        help='The style weight of perceptual loss<int>')
+    parser.add_argument('--batch_size', metavar='', type=int, default=32,
+                        help='batch size of training(10)<int>')
 
-    parser.add_argument('--gp_id', metavar='', type=str, default='7',
-                        help='which group is used to train <str>')
-    parser.add_argument('--train_path', metavar='', type=str, default='../groups/gp_7/train/norm_nii/',
-                        help='The path of training dataset <str>')
-    parser.add_argument('--val_path', metavar='', type=str, default='../groups/gp_7/val/norm_nii/',
-                        help='The path of validation dataset<str>')
+    parser.add_argument('--gp_id', metavar='', type=str, default='1',
+                        help='group id used for model train <str>')
+    parser.add_argument('--train_path', metavar='', type=str, default='../groups/gp_1/train/norm_nii/',
+                        help='The training dataset path <str>')
+    parser.add_argument('--val_path', metavar='', type=str, default='../groups/gp_1/val/norm_nii/',
+                        help='The validation dataset path <str>')
 
-    parser.add_argument('--pretrained_path', metavar='', type=str, default='/0423/transfer/result/gp_7/64-64-32/unet/per_unet_percent/1st_round/model_latest.hdf5',
-                        help='The pretrained path of model<str>')
-    parser.add_argument('--vgg_path', metavar='', type=str,
-                        default='/result/gp_7/64-64-32/unet/per_vgg/2nd_round/loss_model.hdf5',
-                        help='The path of vgg model<str>')
+    parser.add_argument('--pretrained_path', metavar='', type=str, default='',
+                        help='The pretrained model path <str>')
 
-    parser.add_argument('--method', metavar='', type=str, default='per_unet_percent',
-                        help='which loss is used to train <str>')
+    parser.add_argument('--method', metavar='', type=str, default='per_vgg',
+                        help='loss used for model training <str>')
     parser.add_argument('--rounds', metavar='', type=str, default='2nd_round',
-                        help='which loss is used to train <str>')
+                        help='1st round or 2nd round <str>')
 
     args = parser.parse_args()
 
@@ -81,13 +70,10 @@ def main():
     time_stamp = datetime.datetime.now().strftime("-%Y-%m-%d-%H-%M")
     model_id = args.id + time_stamp
     gbl_set_value("gp_id", args.gp_id)
-    gbl_set_value("depth", args.depth)
     gbl_set_value("dir_syn", dir_syn)
     gbl_set_value("dir_model", dir_model)
     gbl_set_value("model_id", model_id)
     gbl_set_value("n_epoch", args.epoch + 1)
-    gbl_set_value("n_filter", args.n_filter)
-    gbl_set_value("depth", args.depth)
     gbl_set_value("batch_size", args.batch_size)
     gbl_set_value("color_mode", args.color_mode)
     gbl_set_value("slice_x", args.slice_x)
@@ -97,19 +83,18 @@ def main():
     gbl_set_value("stride_x", args.stride_x)
     gbl_set_value("stride_y", args.stride_y)
     gbl_set_value("stride_z", args.stride_z)
-    gbl_set_value("content_weight", args.content_weight)
-    gbl_set_value("style_weight", args.style_weight)
     gbl_set_value("pretrained_path", args.pretrained_path)
-    gbl_set_value("vgg_path", args.vgg_path)
     gbl_set_value("train_path", args.train_path)
     gbl_set_value("val_path", args.val_path)
     gbl_set_value("method", args.method)
     gbl_set_value("rounds", args.rounds)
 
+    # check training and validation path
     print(args.train_path)
     print(args.val_path)
 
-    model = train_a_unet(pretrained_model=1)
+    # start training
+    model = train_a_vgg(pretrained_model=0)
     print("Training Completed!")
 
 

@@ -15,7 +15,7 @@ from global_dict.w_global import gbl_get_value
 from model_sCT.vgg_3d import vgg
 from skimage.util import random_noise
 from keras.models import load_model
-from model_PET.nii_generator_aug import *
+from model_sCT.nii_generator_aug import *
 SEED = 314
 
 import tensorflow as tf

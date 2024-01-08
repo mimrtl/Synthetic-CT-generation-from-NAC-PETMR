@@ -156,6 +156,7 @@ def content(y_true, y_pred):
     return content_loss
 
 
+# compute perceptual loss
 def perceptual_loss(y_true, y_pred):
     batch_size = gbl_get_value("batch_size")
     style_weight = gbl_get_value('style_weight')

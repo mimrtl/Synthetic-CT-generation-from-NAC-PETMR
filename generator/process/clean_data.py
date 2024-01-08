@@ -13,10 +13,7 @@ def clean_ct_data():
     img_file = nib.load(img_path)
     img_data = img_file.get_fdata()
 
-    # these are the noises which should be removed
-    # img_data[img_data > -500] = 1
-    # img_data[img_data <= -500] = 0
-
+    # remove noise by threshold
     img_data[img_data > -300] = 1
     img_data[img_data <= -300] = 0
 
@@ -30,14 +27,6 @@ def clean_ct_data():
     if not os.path.exists(input_folder + 'target/'):
         os.mkdir(input_folder + 'target/')
     nib.save(nii_file, input_folder + 'target/' + img_type + '_mask.nii')
-
-    # est_file = nib.load('/FDG-data/22/target/CTAC_mask.nii')
-    # est_data = est_file.get_fdata()
-    # img_data = np.multiply(img_data, est_data)
-    # affine = img_file.affine
-    # header = img_file.header
-    # nii_file = nib.Nifti1Image(img_data, affine, header)
-    # nib.save(nii_file, input_folder + 'target/' + 'whole_mask.nii')
 
     ct_path = input_folder + 'subj0' + num + '_' + img_type + '_clip.nii'
     ct_file = nib.load(ct_path)
@@ -55,7 +44,7 @@ def clean_ct_data():
     nib.save(nii_file, input_folder + 'target/subj0' + num + '_' + img_type + '_target.nii')
 
 
-def clean_mr_data():
+def clean_nacpet_data():
     input_folder = '/data/RegNIFTIs/subj022/'
     img_path = input_folder + 'subj022_CTAC_mask_target.nii'
     img_file = nib.load(img_path)
@@ -81,57 +70,21 @@ def clean_mr_data():
     # nii_file = nib.Nifti1Image(img_data, affine, header)
     # nib.save(nii_file, input_folder + 'mr_mask_1.nii')
 
-    mr_path = input_folder + 'subj022_NAC.nii'
-    mr_file = nib.load(mr_path)
-    mr_data = mr_file.get_fdata()
+    pet_path = input_folder + 'subj022_NAC.nii'
+    pet_file = nib.load(pet_path)
+    pet_data = pet_file.get_fdata()
 
     # new_data = np.zeros((mr_data.shape[0], mr_data.shape[1], mr_data.shape[2]))
-    mr_data = np.multiply(img_data, mr_data)
+    pet_data = np.multiply(img_data, pet_data)
 
-    affine = mr_file.affine
-    header = mr_file.header
-    nii_file = nib.Nifti1Image(mr_data, affine, header)
+    affine = pet_file.affine
+    header = pet_file.header
+    nii_file = nib.Nifti1Image(pet_data, affine, header)
     nib.save(nii_file, input_folder + 'NAC_target_1.nii')
 
 
-def whole_mask(num):
-    # num 19 20 21 22 23
-    # img type CTAC FAT WATER InPhase OutPhase NAC
-    img_types = ['FAT', 'WATER', 'InPhase', 'OutPhase']
-    for img_type in img_types:
-        mask_path = '/data/RegNIFTIs/subj0' + num + '/subj0' + num + '_CTAC_mask_target.nii'
-        data_path = '/data/RegNIFTIs/subj0' + num + '/subj0' + num + '_' + img_type + '.nii'
 
-        mask_file = nib.load(mask_path)
-        data_file = nib.load(data_path)
-
-        mask = mask_file.get_fdata()
-        data = data_file.get_fdata()
-
-        new_data = np.multiply(data, mask)
-        affine = data_file.affine
-        header = data_file.header
-        nii_file = nib.Nifti1Image(new_data, affine, header)
-        outdir = '/data/final_data/subj0' + num
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        outpath = outdir + '/subj0' + num + '_' + img_type + '_target.nii'
-        nib.save(nii_file, outpath)
-
-
-def ConvertToLAC():
-    nums = [19, 20, 21, 22, 23]
-    img_type = 'CTAC'
-    for num in nums:
-        data_path = '/FDG-data/processed/' + str(num) + '/subj0' + str(num) + '_' + img_type + '_target.nii'
-        data_file = nib.load(data_path)
-        data = data_file.get_fdata()
-        muMap = np.copy(data)
-        muMap[data <= 30] = 9.6e-5 * (data[data <= 30] + 1024)
-        muMap[data > 30] = 5.64e-5 * (data[data > 30] + 1024) + 4.08e-2
-
-
-def mv_noise():
+def remove_noise():
     data_path = '/FDG-data/processed/20/subj020_CTAC_target.nii'
     data_file = nib.load(data_path)
     data = data_file.get_fdata()
@@ -143,6 +96,7 @@ def mv_noise():
 
 
 def load_nii(path, data_type):
+    # load nifti data
     dict = {}
     for i in data_type:
         data_path = path + '_' + i + '.nii'
@@ -155,6 +109,7 @@ def load_nii(path, data_type):
 
 
 def save_nii(save_dict, data_dict, path):
+    # save nifti data
     for key in save_dict.keys():
         affine = data_dict[key][1].affine
         header = data_dict[key][1].header
@@ -163,6 +118,7 @@ def save_nii(save_dict, data_dict, path):
 
 
 def create_mask(path):
+    # combine the CT mask and NAC PET mask, and apply it to CT and PET images
     data_type = ['CTAC_mask', 'NAC_mask', 'CTAC', 'NAC']
     data_dict = load_nii(path, data_type)
 
@@ -200,6 +156,7 @@ def create_mask(path):
 
 
 def crop_data(path):
+    # To remove truncated back and train model more efficiently, the data was cropped.
     dicts = {'subj001': [19, 76], 'subj007': [20, 69], 'subj014': [20, 69], 'subj020': [25, 69],
              'subj002': [17, 74], 'subj008': [31, 85], 'subj015': [40, 81], 'subj021': [21, 76],
              'subj003': [18, 71], 'subj009': [16, 71], 'subj016': [28, 69], 'subj022': [27, 87],
@@ -241,12 +198,12 @@ def crop_data(path):
 
 if __name__ == '__main__':
     clean_ct_data()
-    clean_mr_data()
-    nums = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    clean_nacpet_data()
+    # nums = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     nums = [14, 15, 16, 18, 19, 20, 21, 22, 23]
     for num in nums:
         whole_mask(str(num))
-    mv_noise()
+    remove_noise()
     nums = [23]
     for num in nums:
         path = '/data/RegNIFTIs/subj0' + str(num) + '/subj0' + str(num)

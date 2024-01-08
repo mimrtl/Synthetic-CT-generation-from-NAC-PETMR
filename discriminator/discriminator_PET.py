@@ -3,8 +3,8 @@
 import os
 import datetime
 import argparse
-from global_dict.w_global import gbl_set_value, gbl_get_value, gbl_save_value
-from model_sCT.w_train import train_a_vgg
+from global_dict.w_global import gbl_set_value
+from model_PET.w_train import train_a_vgg
 
 
 def usage():
@@ -13,12 +13,12 @@ def usage():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='''This is for generating sCT images from NAC PET with perceptual loss (2nd round).''',
+        description='''This is for discriminating PET images and CT images for perceptual loss calculation (1st round). ''',
         epilog="""All's well that ends well.""")
     parser.add_argument('--slice_x', metavar='', type=int, default=1,
                         help='Slices of input(1)<int>[1/3]')
     parser.add_argument('--color_mode', metavar='', type=int, default=1,
-                        help='Slices of input(1)<int>[1/3]')
+                        help='Greyscale(1) or RGB(3)<int>[1/3]')
 
     parser.add_argument('--size_x', metavar='', type=int, default=64,
                         help='chunk size: x dimension')
@@ -30,31 +30,30 @@ def main():
     parser.add_argument('--stride_x', metavar='', type=int, default=8,
                         help='stride of the x dimension')
     parser.add_argument('--stride_y', metavar='', type=int, default=8,
-                        help='stride of the x dimension')
+                        help='stride of the y dimension')
     parser.add_argument('--stride_z', metavar='', type=int, default=8,
-                        help='stride of the x dimension')
+                        help='stride of the z dimension')
 
-    parser.add_argument('--id', metavar='', type=str, default="chansey",
+    parser.add_argument('--id', metavar='', type=str, default="discriminator",
                         help='ID of the current model.(eeVee)<str>')
     parser.add_argument('--epoch', metavar='', type=int, default=500,
                         help='Number of epoches of training(300)<int>')
-    parser.add_argument('--batch_size', metavar='', type=int, default=32,
-                        help='The batch_size of training(10)<int>')
-
-    parser.add_argument('--gp_id', metavar='', type=str, default='1',
-                        help='which group is used to train <str>')
-    parser.add_argument('--train_path', metavar='', type=str, default='../groups/gp_1/train/norm_nii/',
-                        help='The path of training dataset <str>')
-    parser.add_argument('--val_path', metavar='', type=str, default='../groups/gp_1/val/norm_nii/',
-                        help='The path of validation dataset<str>')
+    parser.add_argument('--batch_size', metavar='', type=int, default=96,
+                        help='batch size of training(10)<int>')
+    parser.add_argument('--gp_id', metavar='', type=str, default='5',
+                        help='group id used for model train <str>')
+    parser.add_argument('--train_path', metavar='', type=str, default='../groups/gp_5/train/norm_nii/',
+                        help='The training dataset path <str>')
+    parser.add_argument('--val_path', metavar='', type=str, default='../groups/gp_5/val/norm_nii/',
+                        help='The validation dataset path <str>')
 
     parser.add_argument('--pretrained_path', metavar='', type=str, default='',
-                        help='The pretrained path of model<str>')
+                        help='The pretrained model path <str>')
 
     parser.add_argument('--method', metavar='', type=str, default='per_vgg',
-                        help='which loss is used to train <str>')
-    parser.add_argument('--rounds', metavar='', type=str, default='2nd_round',
-                        help='which loss is used to train <str>')
+                        help='loss used for model training <str>')
+    parser.add_argument('--rounds', metavar='', type=str, default='1st_round',
+                        help='1st round or 2nd round <str>')
 
     args = parser.parse_args()
 
@@ -89,9 +88,11 @@ def main():
     gbl_set_value("method", args.method)
     gbl_set_value("rounds", args.rounds)
 
+    # check training and validation path
     print(args.train_path)
     print(args.val_path)
 
+    # start training
     model = train_a_vgg(pretrained_model=0)
     print("Training Completed!")
 

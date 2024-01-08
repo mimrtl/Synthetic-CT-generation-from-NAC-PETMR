@@ -2,6 +2,8 @@ from keras.models import Sequential
 from keras.layers import Dense,Conv3D,MaxPooling3D,Flatten
 
 
+# define vgg model
+# Input: 3D; output: probability [0, 1] for binary classification
 def vgg(input_shape=(32, 32, 32, 1)):
     model = Sequential()
     model.add(Conv3D(64, (3, 3, 3),

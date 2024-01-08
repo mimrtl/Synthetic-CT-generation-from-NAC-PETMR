@@ -274,7 +274,7 @@ def compute_chunks(cases, data_types, chunk_info):
     count = 0
     for case in cases:
         whole_data[case] = {}
-        # /home/sunyiyou/Xue/version/unet/data/test_nii/train/Case1
+        # /data/test_nii/train/Case1
         for data_type in data_types:
             whole_data[case][data_type] = []
             path = glob.glob(os.path.join(case, '*'+data_type+'*.nii'))
@@ -388,7 +388,7 @@ def compute_chunks_multi(cases, data_types, chunk_info):
     count = 0
     for case in cases:
         whole_data[case] = {}
-        # /home/sunyiyou/Xue/version/unet/data/test_nii/train/Case1
+        # /data/test_nii/train/Case1
         paths = []
         for data_type in data_types:
             single_path = glob.glob(os.path.join(case, '*' + data_type + '*.nii'))
